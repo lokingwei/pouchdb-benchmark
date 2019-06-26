@@ -1,8 +1,8 @@
 const PouchDB = require('pouchdb');
 
 var dbName = 'test-secondary',
-	nRun = 1000,
-	nDocs = 100,
+	nRun = 100,
+	nDocs = 500000,
 	deleteDB = true,
 	status = [
 		'Lilla Torget', 'Västlänken', 'Kruthusgatan'
@@ -80,9 +80,7 @@ function createDocuments(i) {
 		activity: activities[i % activities.length],
 		status: targetCount > 0 ? targetStatus : status[i % status.length],
 		slot: slot[i % slot.length],
-		time: (((i % 9) + '').replace(/,/g, '.') * 1),
 		description: descriptions[i % descriptions.length],
-		date: new Date(i * 86400)
 	})
 }
 
@@ -98,15 +96,18 @@ function query(i) {
 	})
 }
 
-function run(i) {
+function prepare(i) {
 	return new Promise((resolve) => {
 		time(createDocuments, nDocs).
 		then(() => { return time(query, 1) }).
-		// then(() => { return time(query, 1) }).
-		// then(() => { return time(createDocuments, 1) }).
-		// then(() => { return time(query, 1) }).
-		// then(() => { return time(createDocuments, 1) }).
-		// then(() => { return time(query, 1) }).
+		then(() => { resolve(); });
+	});
+}
+
+function run(i) {
+	return new Promise((resolve) => {
+		createDocuments(1).
+		then(() => { return time(query, 1) }).
 		then(() => { resolve(); });
 	});
 }
@@ -119,6 +120,7 @@ console.log(`nRun: ${nRun}, nDocs: ${nDocs}`);
 setUp();
 
 Promise.resolve().
+then(function() { return time(prepare, 1); }).
 then(function() { return time(run, nRun); }).
 then(tearDown).
 catch(function(e) { console.log(e); tearDown(); throw e });
