@@ -1,12 +1,14 @@
 const PouchDB = require('pouchdb');
 
 var dbName = 'test-secondary',
-	nRun = 1
-	nDocs = 1000,
+	nRun = 1000,
+	nDocs = 100,
 	deleteDB = true,
 	status = [
 		'Lilla Torget', 'Västlänken', 'Kruthusgatan'
 	],
+	targetCount = 300,
+	targetStatus = 'active',
     db = null;
 
 function setUp() {
@@ -72,11 +74,11 @@ function createDocuments(i) {
 	descriptions = [
 		'', '', '', 'Kunden galen', 'Grus i maskineriet', 'OBS! Fakturera först nästa månad'
 	];
-
+	targetCount -= 1;
 	return db.post({
 		type: 'entry',
 		activity: activities[i % activities.length],
-		status: status[i % status.length],
+		status: targetCount > 0 ? targetStatus : status[i % status.length],
 		slot: slot[i % slot.length],
 		time: (((i % 9) + '').replace(/,/g, '.') * 1),
 		description: descriptions[i % descriptions.length],
@@ -87,10 +89,10 @@ function createDocuments(i) {
 function query(i) {
 	return new Promise((resolve) => {
 		db.query('bill/by_status', {
-			key: status[0],
+			key: targetStatus,
 		  }).
 		then((result) => { 
-			console.log(`found: ${result.total_rows}`);
+			console.log(`found: ${result.rows.length}`);
 			resolve()
 		});
 	})
@@ -100,9 +102,11 @@ function run(i) {
 	return new Promise((resolve) => {
 		time(createDocuments, nDocs).
 		then(() => { return time(query, 1) }).
-		then(() => { return time(query, 1) }).
-		then(() => { return time(createDocuments, 1) }).
-		then(() => { return time(query, 1) }).
+		// then(() => { return time(query, 1) }).
+		// then(() => { return time(createDocuments, 1) }).
+		// then(() => { return time(query, 1) }).
+		// then(() => { return time(createDocuments, 1) }).
+		// then(() => { return time(query, 1) }).
 		then(() => { resolve(); });
 	});
 }
